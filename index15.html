@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regla de Cadena y Extremos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.4/math.min.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #000000; 
+            color: #008b2e; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+        }
+        .calculator { 
+            border: 1px solid #ccc; 
+            padding: 20px; 
+            border-radius: 10px; 
+            width: 100%; 
+            max-width: 600px; 
+            background: #fff; 
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); 
+        }
+        .calculator input, .calculator button { 
+            width: 100%; 
+            padding: 10px; 
+            margin: 5px 0; 
+            border-radius: 5px; 
+            border: 1px solid #ccc; 
+            font-size: 1em; 
+        }
+        button {
+            background-color: #00923d;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #1a4971;
+        }
+        .result { 
+            font-weight: bold; 
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .success {
+            color: #28a745;
+            background-color: #d4edda;
+        }
+        .derivatives {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Regla de Cadena y Extremos</h1>
+    <div class="calculator">
+        <label for="function-input">Función (en términos de x y y):</label>
+        <input type="text" id="function-input" placeholder="Ej. x^2 + y^2">
+        
+        <label for="x-point">Punto a evaluar (x):</label>
+        <input type="number" id="x-point" placeholder="Valor de x">
+        
+        <label for="y-point">Punto a evaluar (y):</label>
+        <input type="number" id="y-point" placeholder="Valor de y">
+        
+        <button onclick="calculateExtremes()">Calcular Extremos</button>
+        
+        <div class="derivatives" id="derivatives-output"></div>
+        <div class="result" id="result-output"></div>
+    </div>
+
+    <script>
+        function calculateExtremes() {
+            const funcInput = document.getElementById("function-input").value;
+            const xPoint = parseFloat(document.getElementById("x-point").value);
+            const yPoint = parseFloat(document.getElementById("y-point").value);
+            
+            try {
+                // Crear función con math.js
+                const f = math.parse(funcInput);
+                
+                // Calcular derivadas parciales
+                const dx = math.derivative(funcInput, 'x');
+                const dy = math.derivative(funcInput, 'y');
+                
+                // Calcular derivadas parciales segundas
+                const dxx = math.derivative(dx.toString(), 'x');
+                const dyy = math.derivative(dy.toString(), 'y');
+                const dxy = math.derivative(dx.toString(), 'y');
+                
+                // Mostrar derivadas
+                document.getElementById("derivatives-output").innerHTML = `
+                    <h3>Derivadas parciales:</h3>
+                    <p>∂f/∂x = ${dx.toString()}</p>
+                    <p>∂f/∂y = ${dy.toString()}</p>
+                    <p>∂²f/∂x² = ${dxx.toString()}</p>
+                    <p>∂²f/∂y² = ${dyy.toString()}</p>
+                    <p>∂²f/∂x∂y = ${dxy.toString()}</p>
+                `;
+                
+                if (!isNaN(xPoint) && !isNaN(yPoint)) {
+                    // Evaluar derivadas en el punto
+                    const dxValue = dx.evaluate({x: xPoint, y: yPoint});
+                    const dyValue = dy.evaluate({x: xPoint, y: yPoint});
+                    
+                    // Evaluar determinante Hessiano
+                    const dxxValue = dxx.evaluate({x: xPoint, y: yPoint});
+                    const dyyValue = dyy.evaluate({x: xPoint, y: yPoint});
+                    const dxyValue = dxy.evaluate({x: xPoint, y: yPoint});
+                    
+                    const hessian = dxxValue * dyyValue - dxyValue * dxyValue;
+                    
+                    let resultText = "";
+                    
+                    if (Math.abs(dxValue) < 1e-10 && Math.abs(dyValue) < 1e-10) {
+                        resultText = "Punto crítico encontrado en (" + xPoint + ", " + yPoint + ")\n";
+                        
+                        if (hessian > 0) {
+                            if (dxxValue > 0) {
+                                resultText += "Es un mínimo local";
+                            } else {
+                                resultText += "Es un máximo local";
+                            }
+                        } else if (hessian < 0) {
+                            resultText += "Es un punto silla";
+                        } else {
+                            resultText += "Se requiere más análisis para determinar el tipo de punto crítico";
+                        }
+                    } else {
+                        resultText = "No es un punto crítico";
+                    }
+                    
+                    document.getElementById("result-output").innerHTML = resultText;
+                    document.getElementById("result-output").className = "result success";
+                } else {
+                    document.getElementById("result-output").innerHTML = "Por favor, ingresa valores numéricos para x e y";
+                    document.getElementById("result-output").className = "result error";
+                }
+                
+            } catch (error) {
+                document.getElementById("result-output").innerHTML = "Error: " + error.message;
+                document.getElementById("result-output").className = "result error";
+                document.getElementById("derivatives-output").innerHTML = "";
+            }
+        }
+    </script>
+</body>
+</html>
